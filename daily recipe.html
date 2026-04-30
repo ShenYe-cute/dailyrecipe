@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>每日随机菜谱 | 灵感食光</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* 提升点击按钮体验，避免拖动选中文字 */
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(145deg, #fef9e8 0%, #fff3e0 100%);
+            font-family: 'Segoe UI', 'Roboto', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+        }
+
+        /* 主卡片容器 */
+        .recipe-card {
+            max-width: 650px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(2px);
+            border-radius: 56px;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.25), 0 4px 12px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: 1px solid rgba(255, 245, 215, 0.8);
+        }
+
+        .recipe-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 32px 55px -15px rgba(0, 0, 0, 0.3);
+        }
+
+        /* 装饰头部 */
+        .hero {
+            background: #ff9f4a;
+            background-image: radial-gradient(circle at 10% 20%, rgba(255, 215, 150, 0.4) 2%, transparent 2.5%),
+                              radial-gradient(circle at 85% 70%, rgba(255, 220, 140, 0.4) 1.8%, transparent 2%);
+            background-size: 35px 35px, 28px 28px;
+            padding: 1.8rem 1.5rem 1.2rem;
+            text-align: center;
+            color: white;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .hero h1 {
+            font-size: 2.2rem;
+            letter-spacing: 2px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .hero h1 span:first-child {
+            font-size: 2rem;
+        }
+
+        .hero p {
+            margin-top: 0.6rem;
+            font-size: 0.95rem;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+
+        /* 主内容区: 菜谱展示 */
+        .recipe-content {
+            padding: 2rem 2rem 1.8rem;
+        }
+
+        /* 今日引用的标志 */
+        .quote-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: #f0ede5;
+            padding: 0.3rem 1rem;
+            border-radius: 60px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #b45f2b;
+            letter-spacing: 0.5px;
+            margin-bottom: 1.5rem;
+            border: 1px solid #ffe1b3;
+        }
+
+        .recipe-name-section {
+            margin-bottom: 1.8rem;
+            border-left: 5px solid #ff9f4a;
+            padding-left: 1rem;
+        }
+
+        .recipe-name {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #3c2a1f;
+            line-height: 1.2;
+            word-break: break-word;
+        }
+
+        .recipe-sub {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: #ac8e68;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .recipe-sub span {
+            background: #fef3e4;
+            padding: 0.2rem 0.7rem;
+            border-radius: 50px;
+            font-weight: 500;
+        }
+
+        /* 食材 & 做法卡片 */
+        .info-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.3rem;
+            margin: 1.8rem 0;
+        }
+
+        .ingredients, .steps {
+            background: #fefaf5;
+            border-radius: 36px;
+            padding: 1.2rem 1.5rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.02), inset 0 1px 0 rgba(255,255,240,0.8);
+            border: 1px solid #fff0df;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #c16f2e;
+            margin-bottom: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 2px dashed #ffe1be;
+            padding-bottom: 0.4rem;
+        }
+
+        .ingredients ul, .steps ol {
+            padding-left: 1.4rem;
+            color: #4a3724;
+            line-height: 1.55;
+            font-size: 0.95rem;
+        }
+
+        .ingredients li, .steps li {
+            margin: 0.5rem 0;
+        }
+
+        .steps li {
+            margin: 0.7rem 0;
+        }
+
+        /* 随机按钮 */
+        .randomize-btn {
+            display: flex;
+            justify-content: center;
+            margin-top: 1.2rem;
+            margin-bottom: 0.8rem;
+        }
+
+        button {
+            background: #ff9f4a;
+            border: none;
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 0.9rem 2rem;
+            border-radius: 60px;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.25s;
+            box-shadow: 0 8px 18px rgba(255, 110, 40, 0.25);
+            backdrop-filter: blur(4px);
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            background: #ff8822;
+            transform: scale(0.97);
+            box-shadow: 0 5px 12px rgba(255, 100, 20, 0.3);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        /* 趣味引用脚标 */
+        .food-footer {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 0.7rem;
+            color: #b08968;
+            border-top: 1px solid #ffe1c6;
+            padding-top: 1.1rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .food-footer span {
+            background: #fff3e8;
+            padding: 0.2rem 0.8rem;
+            border-radius: 60px;
+        }
+
+        /* 平滑入场动画 */
+        .fade-transition {
+            transition: opacity 0.2s ease;
+        }
+
+        /* 响应式 */
+        @media (max-width: 550px) {
+            .recipe-content {
+                padding: 1.4rem;
+            }
+            .recipe-name {
+                font-size: 1.7rem;
+            }
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+            button {
+                padding: 0.7rem 1.4rem;
+                font-size: 1rem;
+            }
+            .ingredients, .steps {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="recipe-card" id="app">
+    <div class="hero">
+        <h1>
+            <span>🍲</span> 每日随机菜谱
+            <span>✨</span>
+        </h1>
+        <p>「 让灵感与风味在舌尖不期而遇 」</p>
+    </div>
+    <div class="recipe-content" id="recipeContentArea">
+        <!-- 动态菜谱内容会由js渲染到这里 -->
+        <div style="text-align:center; padding: 2rem;">加载美味中...</div>
+    </div>
+</div>
+
+<script>
+    // ---------- 丰富菜谱库 (15+道精致家常/创意菜) ----------
+    const RECIPES = [
+        {
+            name: "🌶️ 宫保鸡丁",
+            tags: ["川菜", "荔枝味", "下饭"],
+            ingredients: ["鸡腿肉 300g", "油炸花生米 50g", "大葱段 2根", "干辣椒 8个", "花椒 1小撮", "姜蒜片 适量", "酱油、醋、糖、淀粉、料酒"],
+            steps: [
+                "鸡肉切丁，加料酒、盐、淀粉抓匀腌制15分钟。",
+                "调碗芡: 2勺糖、2勺醋、1勺酱油、1勺淀粉、少许水拌匀。",
+                "热锅凉油滑熟鸡丁盛出，爆香花椒、干辣椒、姜葱蒜。",
+                "倒入鸡丁和料汁大火翻炒，最后加花生米快速炒匀即可。"
+            ]
+        },
+        {
+            name: "🍅 番茄炖牛腩",
+            tags: ["酸甜开胃", "暖心暖胃"],
+            ingredients: ["牛腩 500g", "番茄 4个", "洋葱 半个", "姜片 3片", "番茄酱 2勺", "八角 1个", "盐、糖、生抽"],
+            steps: [
+                "牛腩切块冷水下锅焯水去浮沫，捞出洗净。",
+                "番茄去皮切块，洋葱切碎。",
+                "锅中炒香洋葱、姜片，加牛腩翻炒，加番茄炒软出汁。",
+                "加足量水、八角、番茄酱烧开，转小火炖1.5小时，加盐糖调味。"
+            ]
+        },
+        {
+            name: "🥑 牛油果拌饭",
+            tags: ["低卡", "素食友好", "日式"],
+            ingredients: ["热米饭 1碗", "牛油果 1个", "溏心蛋 1个", "日式酱油 2勺", "白芝麻 少许", "海苔碎 适量"],
+            steps: [
+                "牛油果对半切开去核，切片码在热米饭上。",
+                "中间放一颗溏心蛋，淋入日式酱油。",
+                "撒上海苔碎和白芝麻，拌开即食，香浓治愈。"
+            ]
+        },
+        {
+            name: "🍤 蒜蓉粉丝蒸虾",
+            tags: ["鲜美", "宴客菜"],
+            ingredients: ["鲜虾 12只", "龙口粉丝 2把", "蒜末 1整头", "小米辣 2个", "葱花 少许", "蒸鱼豉油 2勺"],
+            steps: [
+                "粉丝温水泡软铺盘底，虾开背去虾线，摆在粉丝上。",
+                "蒜末热油泼成金银蒜，加生抽、蚝油、糖调成蒜蓉酱。",
+                "将蒜蓉酱均匀铺在虾背上，蒸锅大火蒸6分钟。",
+                "撒葱花小米辣，淋热油和蒸鱼豉油即可。"
+            ]
+        },
+        {
+            name: "🥘 日式咖喱鸡肉饭",
+            tags: ["国民美食", "浓郁"],
+            ingredients: ["鸡腿肉 300g", "土豆 1个", "胡萝卜 1根", "洋葱 半个", "咖喱块 3块", "米饭", "黑胡椒"],
+            steps: [
+                "洋葱炒至透明，加入鸡腿肉炒至变色。",
+                "下土豆胡萝卜块翻炒，加水没过食材煮15分钟。",
+                "关火加入咖喱块搅拌融化，再小火煮5分钟至浓稠。",
+                "浇在热米饭上，完成！"
+            ]
+        },
+        {
+            name: "🥬 蚝油生菜",
+            tags: ["快手素菜", "脆嫩"],
+            ingredients: ["罗马生菜 2颗", "蒜末 3瓣", "蚝油 2勺", "生抽 1勺", "糖 少许"],
+            steps: [
+                "生菜焯水10秒捞出摆盘。",
+                "锅中爆香蒜末，加蚝油、生抽、少许水煮开。",
+                "酱汁淋在生菜上，清脆爽口。"
+            ]
+        },
+        {
+            name: "🐟 清蒸鲈鱼",
+            tags: ["粤式经典", "鲜嫩"],
+            ingredients: ["鲈鱼 1条", "姜丝 大量", "葱丝 适量", "红椒丝", "蒸鱼豉油 3勺", "热油"],
+            steps: [
+                "鱼背划刀，塞姜片，水开上锅蒸8-9分钟。",
+                "倒掉盘中汁水，铺上葱丝红椒丝。",
+                "淋蒸鱼豉油，泼滚油激发香味。"
+            ]
+        },
+        {
+            name: "🍝 罗勒青酱意面",
+            tags: ["西餐", "清新", "快手"],
+            ingredients: ["意面 150g", "新鲜罗勒叶 50g", "松子 20g", "帕玛森芝士 30g", "大蒜 2瓣", "橄榄油"],
+            steps: [
+                "罗勒、松子、蒜、芝士、橄榄油用料理机打成青酱。",
+                "意面煮至al dente，留一勺面汤。",
+                "意面与青酱、面汤拌匀，点缀罗勒叶。"
+            ]
+        },
+        {
+            name: "🍆 鱼香茄子煲",
+            tags: ["下饭神器", "川味"],
+            ingredients: ["长茄子 2根", "猪肉末 80g", "郫县豆瓣酱 1勺", "泡椒末", "姜蒜末", "鱼香汁(糖醋生抽淀粉)"],
+            steps: [
+                "茄子切条撒盐杀水，挤干后裹淀粉煎软捞出。",
+                "炒香肉末，加豆瓣酱泡椒姜蒜末炒出红油。",
+                "倒入茄子和鱼香汁，翻炒收汁，撒葱花出锅。"
+            ]
+        },
+        {
+            name: "🥣 南瓜奶油浓汤",
+            tags: ["西式浓汤", "治愈"],
+            ingredients: ["南瓜 400g", "洋葱 半个", "黄油 20g", "淡奶油 80ml", "鸡高汤 300ml", "黑胡椒"],
+            steps: [
+                "南瓜洋葱炒软，加高汤煮至南瓜软烂。",
+                "用料理棒打碎成糊，加淡奶油搅匀。",
+                "盐和胡椒调味，滴几滴奶油拉花。"
+            ]
+        },
+        {
+            name: "🍳 韩式泡菜五花肉",
+            tags: ["韩式", "辣爽"],
+            ingredients: ["五花肉片 200g", "泡菜 200g", "洋葱丝", "韩式辣酱 1勺", "蒜末", "糖少许"],
+            steps: [
+                "五花肉煸出油脂，加入洋葱蒜末炒香。",
+                "加泡菜、辣酱、糖翻炒均匀，加一点点水焖1分钟。",
+                "配生菜或米饭都超赞。"
+            ]
+        },
+        {
+            name: "🥟 抱蛋煎饺",
+            tags: ["创意早餐", "快手"],
+            ingredients: ["速冻水饺 8个", "鸡蛋 2个", "黑芝麻", "葱花", "食用油"],
+            steps: [
+                "平底锅刷油，摆入冷冻水饺中火煎到底部金黄。",
+                "倒入半碗水，盖盖焖至水分收干。",
+                "淋入蛋液，撒黑芝麻葱花，蛋液凝固即可。"
+            ]
+        },
+        {
+            name: "🦐 泰式酸辣柠檬虾",
+            tags: ["东南亚风味", "低脂"],
+            ingredients: ["虾仁 200g", "柠檬 1个", "香菜 1把", "鱼露 2勺", "蒜末、小米辣", "糖"],
+            steps: [
+                "虾仁焯熟过冰水，保持Q弹。",
+                "调制酱汁: 鱼露+柠檬汁+蒜末+小米辣+糖+水。",
+                "酱汁淋在虾仁上，撒香菜碎冷藏半小时更入味。"
+            ]
+        },
+        {
+            name: "🥔 干锅土豆片",
+            tags: ["香辣", "下酒"],
+            ingredients: ["土豆 2个", "五花肉片 60g", "干辣椒", "豆瓣酱 1勺", "青蒜苗", "姜蒜"],
+            steps: [
+                "土豆切片煎至两面焦黄盛出。",
+                "炒五花肉出油，下豆瓣酱干辣椒姜蒜炒香。",
+                "倒入土豆片大火快炒，加青蒜苗出锅。"
+            ]
+        },
+        {
+            name: "🍚 黯然销魂煲仔饭",
+            tags: ["广式风味", "腊味"],
+            ingredients: ["大米 2杯", "腊肠 2根", "腊肉 1块", "青菜 几颗", "鸡蛋 1个", "煲仔饭酱油"],
+            steps: [
+                "米浸泡30分钟，砂锅刷油加入米和水(1:1.2)。",
+                "大火烧到水快干，铺上腊肠腊肉，转小火焖10分钟。",
+                "打入鸡蛋，青菜烫熟摆上，淋酱油拌匀，锅巴超香。"
+            ]
+        },
+        {
+            name: "🍪 燕麦能量球(甜点引用)",
+            tags: ["免烤", "能量补给"],
+            ingredients: ["即食燕麦 150g", "花生酱 80g", "蜂蜜 50g", "黑巧克力豆 30g", "椰子油"],
+            steps: [
+                "花生酱、蜂蜜、椰子油隔水融化混合。",
+                "加入燕麦和巧克力豆搅拌均匀。",
+                "搓成小球，冷藏1小时即可享用。"
+            ]
+        }
+    ];
+
+    // 辅助函数: 随机获取菜谱
+    function getRandomRecipe() {
+        const randomIndex = Math.floor(Math.random() * RECIPES.length);
+        return { ...RECIPES[randomIndex] }; // 返回新对象避免引用突变
+    }
+
+    // DOM 元素
+    const appContainer = document.getElementById('app');
+    const contentArea = document.getElementById('recipeContentArea');
+
+    // 渲染菜谱 (带动画淡入效果，直接替换内容)
+    function renderRecipe(recipe) {
+        if (!recipe) return;
+        
+        // 构建食材列表html
+        const ingredientsHtml = recipe.ingredients.map(ing => `<li>🍴 ${ing}</li>`).join('');
+        // 构建步骤列表html (加上序号表情)
+        const stepsHtml = recipe.steps.map((step, idx) => `<li>${idx+1}. ${step}</li>`).join('');
+        
+        // 组装标签徽章 (tags展示小提示)
+        const tagsHtml = recipe.tags.map(tag => `<span>#${tag}</span>`).join('');
+        
+        const fullHtml = `
+            <div class="fade-transition" style="animation: fadeIn 0.25s ease;">
+                <div class="quote-badge">
+                    📖 今日灵感食单 · 随缘抽取
+                </div>
+                <div class="recipe-name-section">
+                    <div class="recipe-name">${escapeHtml(recipe.name)}</div>
+                    <div class="recipe-sub">
+                        ${tagsHtml}
+                        <span>⚡ 随机推荐</span>
+                    </div>
+                </div>
+                <div class="info-grid">
+                    <div class="ingredients">
+                        <div class="section-title">
+                            🧂 食材准备
+                        </div>
+                        <ul>
+                            ${ingredientsHtml || '<li>🥗 根据口味自由搭配</li>'}
+                        </ul>
+                    </div>
+                    <div class="steps">
+                        <div class="section-title">
+                            👩‍🍳 烹饪步骤
+                        </div>
+                        <ol>
+                            ${stepsHtml || '<li>随心烹饪，享受乐趣</li>'}
+                        </ol>
+                    </div>
+                </div>
+                <div class="randomize-btn">
+                    <button id="randomBtn" aria-label="换一道菜谱">
+                        🎲 换一道美味 🍽️
+                    </button>
+                </div>
+                <div class="food-footer">
+                    <span>✨ 三餐四季，温暖有趣</span>
+                    <span>🔥 随机食谱，告别选择困难</span>
+                </div>
+            </div>
+        `;
+        
+        // 更新内容区域
+        contentArea.innerHTML = fullHtml;
+        
+        // 重新绑定按钮事件 (因为innerHTML后原按钮消失)
+        const newBtn = document.getElementById('randomBtn');
+        if (newBtn) {
+            // 避免重复监听，使用新的事件绑定 (先移除旧的监听引用不存在，直接添加)
+            newBtn.addEventListener('click', handleRandomClick);
+        }
+    }
+    
+    // 简单的防XSS
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+            return c;
+        });
+    }
+    
+    // 随机点击处理 (带微调, 重新生成菜谱，且可能避免连续相同，但是随机概率可以接受)
+    let currentRecipeName = '';
+    function handleRandomClick() {
+        let newRecipe = getRandomRecipe();
+        // 可选: 避免连续两次完全相同的菜谱 (提升体验)
+        if (newRecipe.name === currentRecipeName && RECIPES.length > 1) {
+            // 再抽一次
+            newRecipe = getRandomRecipe();
+        }
+        currentRecipeName = newRecipe.name;
+        renderRecipe(newRecipe);
+        
+        // 添加轻触震动感（可选，不影响体验）
+        if (window.navigator && window.navigator.vibrate) {
+            window.navigator.vibrate(20);
+        }
+    }
+    
+    // 初始化页面: 随机呈现一道菜
+    function init() {
+        const firstRecipe = getRandomRecipe();
+        currentRecipeName = firstRecipe.name;
+        renderRecipe(firstRecipe);
+        // 添加动画keyframes (动态style)
+        if (!document.querySelector('#dynamicAnimStyle')) {
+            const style = document.createElement('style');
+            style.id = 'dynamicAnimStyle';
+            style.textContent = `
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(6px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .fade-transition {
+                    animation: fadeIn 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1) forwards;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+    
+    // 启动应用
+    init();
+</script>
+</body>
+</html>
